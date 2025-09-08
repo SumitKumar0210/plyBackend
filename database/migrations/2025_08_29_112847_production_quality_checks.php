@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             
             // Basic Info
-            $table->unsignedInteger('po_id');
+            $table->unsignedInteger('po_id')->nullable();
             $table->string('image', 225)->nullable();
             $table->longText('comment', 225)->nullable();
             $table->tinyInteger('status')->default(0);

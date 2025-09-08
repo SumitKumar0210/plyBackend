@@ -11,4 +11,5 @@ class UnitOfMeasurement extends Model
     use HasFactory,SoftDeletes;
 
    protected $table = 'unit_of_measurements';
+
 }

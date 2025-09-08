@@ -22,6 +22,24 @@ class CategoryController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try{
+            $query = Category::orderBy('id','desc');
+            if ($request->has('name') && !empty($request->name)) {
+                $query->where('name', 'like', '%' . $request->name . '%');
+            }
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            $categories = $query->paginate(10);
+            return response()->json($categories);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch categorys'], 500);
+        }
+        
+    }
+
     public function store(Request $request)
     {
         try{

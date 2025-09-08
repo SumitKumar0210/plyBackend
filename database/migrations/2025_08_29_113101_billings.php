@@ -17,10 +17,10 @@ return new class extends Migration
             $table->id();
             
             // Basic Info
-            $table->unsignedInteger('po_id');
+            $table->unsignedInteger('po_id')->nullable();
             $table->string('bill_no', 50)->nullable();
             $table->date('date')->nullable();
-            $table->date('delivered')->nullable();
+            $table->date('delivered_date')->nullable();
             $table->integer('consignee')->nullable();
             $table->string('invoice_no', 50)->nullable();
             $table->string('order_no', 50)->nullable();

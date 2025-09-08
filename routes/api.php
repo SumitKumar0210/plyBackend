@@ -22,9 +22,12 @@ use App\Http\Controllers\Admin\Modules\Master\StockController;
 use App\Http\Controllers\Admin\Modules\Purchaese\PurchaseOrderController;
 use App\Http\Controllers\Admin\Modules\Purchaese\PurchaseInwardLogController;
 use App\Http\Controllers\Admin\Modules\Purchaese\PurchaseMaterialController;
+use App\Http\Controllers\Admin\Modules\Purchaese\GrnPurchaseController;
 use App\Http\Controllers\Admin\Modules\Quotation\QuotationOrderController;
 use App\Http\Controllers\Admin\Modules\Quotation\QuotationProductController;
 use App\Http\Controllers\Admin\Modules\Production\ProductionOrderController;
+use App\Http\Controllers\Admin\Modules\Production\ProductionQualityCheckController;
+use App\Http\Controllers\Admin\Modules\Billing\BillingController;
 use App\Http\Controllers\Admin\Modules\HandToolController;
 use App\Http\Controllers\Admin\Modules\MachineOperatorController;
 use App\Http\Controllers\Admin\Modules\SalesReturnController;
@@ -73,6 +76,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [UserTypeController::class, 'update']);
         Route::post('delete/{id}', [UserTypeController::class, 'delete']);
         Route::post('status-update', [UserTypeController::class, 'statusUpdate']);
+        Route::post('search', [UserTypeController::class, 'search']);
     });
 
 
@@ -83,6 +87,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [DepartmentController::class, 'update']);
         Route::post('delete/{id}', [DepartmentController::class, 'delete']);
         Route::post('status-update', [DepartmentController::class, 'statusUpdate']);
+        Route::post('search', [DepartmentController::class, 'search']);
     });
 
 
@@ -113,6 +118,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [CategoryController::class, 'update']);
         Route::post('delete/{id}', [CategoryController::class, 'delete']);
         Route::post('status-update', [CategoryController::class, 'statusUpdate']);
+        Route::post('search', [CategoryController::class, 'search']);
     });
    
     
@@ -123,6 +129,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [VendorController::class, 'update']);
         Route::post('delete/{id}', [VendorController::class, 'delete']);
         Route::post('status-update', [VendorController::class, 'statusUpdate']);
+        Route::post('search', [VendorController::class, 'search']);
     });
    
     
@@ -133,6 +140,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [UnitOfMeasurementController::class, 'update']);
         Route::post('delete/{id}', [UnitOfMeasurementController::class, 'delete']);
         Route::post('status-update', [UnitOfMeasurementController::class, 'statusUpdate']);
+        Route::post('search', [UnitOfMeasurementController::class, 'search']);
     });
    
     
@@ -143,6 +151,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [MaterialController::class, 'update']);
         Route::post('delete/{id}', [MaterialController::class, 'delete']);
         Route::post('status-update', [MaterialController::class, 'statusUpdate']);
+        Route::post('search', [MaterialController::class, 'search']);
     });
    
     
@@ -163,6 +172,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [ProductUnitMaterialController::class, 'update']);
         Route::post('delete/{id}', [ProductUnitMaterialController::class, 'delete']);
         Route::post('status-update', [ProductUnitMaterialController::class, 'statusUpdate']);
+        Route::post('search', [ProductUnitMaterialController::class, 'search']);
     });
    
     
@@ -183,6 +193,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [CustomerController::class, 'update']);
         Route::post('delete/{id}', [CustomerController::class, 'delete']);
         Route::post('status-update', [CustomerController::class, 'statusUpdate']);
+        Route::post('search', [CustomerController::class, 'search']);
     });
    
     
@@ -193,6 +204,7 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [SalesUserController::class, 'update']);
         Route::post('delete/{id}', [SalesUserController::class, 'delete']);
         Route::post('status-update', [SalesUserController::class, 'statusUpdate']);
+        Route::post('search', [SalesUserController::class, 'search']);
     });
    
     
@@ -334,6 +346,36 @@ Route::group(['middleware' => ['api', 'check.jwt'],'prefix' => 'admin'], functio
         Route::post('update/{id}', [TentativeItemController::class, 'update']);
         Route::post('delete/{id}', [TentativeItemController::class, 'delete']);
         Route::post('status-update', [TentativeItemController::class, 'statusUpdate']);
+    });
+
+
+    Route::group(['prefix' => 'quality-check'], function ($router) {
+        Route::get('get-data', [ProductionQualityCheckController::class, 'getData']);
+        Route::post('store', [ProductionQualityCheckController::class, 'store']);
+        Route::post('edit/{id}', [ProductionQualityCheckController::class, 'edit']);
+        Route::post('update/{id}', [ProductionQualityCheckController::class, 'update']);
+        Route::post('delete/{id}', [ProductionQualityCheckController::class, 'delete']);
+        Route::post('status-update', [ProductionQualityCheckController::class, 'statusUpdate']);
+    });
+
+
+    Route::group(['prefix' => 'billing'], function ($router) {
+        Route::get('get-data', [BillingController::class, 'getData']);
+        Route::post('store', [BillingController::class, 'store']);
+        Route::post('edit/{id}', [BillingController::class, 'edit']);
+        Route::post('update/{id}', [BillingController::class, 'update']);
+        Route::post('delete/{id}', [BillingController::class, 'delete']);
+        Route::post('status-update', [BillingController::class, 'statusUpdate']);
+    });
+
+
+    Route::group(['prefix' => 'grn-purchase'], function ($router) {
+        Route::get('get-data', [GrnPurchaseController::class, 'getData']);
+        Route::post('store', [GrnPurchaseController::class, 'store']);
+        Route::post('edit/{id}', [GrnPurchaseController::class, 'edit']);
+        Route::post('update/{id}', [GrnPurchaseController::class, 'update']);
+        Route::post('delete/{id}', [GrnPurchaseController::class, 'delete']);
+        Route::post('status-update', [GrnPurchaseController::class, 'statusUpdate']);
     });
 
     

@@ -22,6 +22,24 @@ class UserTypeController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try{
+            $query = UserType::orderBy('id','desc');
+            if ($request->has('name') && !empty($request->name)) {
+                $query->where('name', 'like', '%' . $request->name . '%');
+            }
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            $userTypes = $query->paginate(10);
+            return response()->json($userTypes);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch user types'], 500);
+        }
+        
+    }
+
     public function store(Request $request)
     {
         try{

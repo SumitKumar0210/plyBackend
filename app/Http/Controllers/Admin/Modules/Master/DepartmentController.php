@@ -22,6 +22,24 @@ class DepartmentController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try{
+            $query = Department::orderBy('id','desc');
+            if ($request->has('name') && !empty($request->name)) {
+                $query->where('name', 'like', '%' . $request->name . '%');
+            }
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            $departments = $query->paginate(10);
+            return response()->json($departments);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch departments'], 500);
+        }
+        
+    }
+
     public function store(Request $request)
     {
         try{

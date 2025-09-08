@@ -19,6 +19,8 @@ return new class extends Migration
             // Basic Info
             $table->unsignedInteger('purchase_order_id');
             $table->text('note')->nullable();
+            $table->tinyInteger('status')->default(0);
+
            
             // Relations
             $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('set null');

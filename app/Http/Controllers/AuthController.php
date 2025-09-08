@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 use Mail;
 
@@ -120,9 +121,18 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        auth()->logout();
-
-        return response()->json(['message' => 'Successfully logged out']);
+         try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'User successfully logged out.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Sorry, the user cannot be logged out.'
+            ], 500);
+        }
     }
 
     /**

@@ -13,13 +13,58 @@ class ProductUnitMaterialController extends Controller
     public function getData(Request $request)
     {
         try{
-            $unitMaterials = ProductUnitMaterial::orderBy('id','desc')->paginate(10);
+            $unitMaterials = ProductUnitMaterial::with('product','material')->orderBy('id','desc')->paginate(10);
             return response()->json($unitMaterials);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch product unit materials'], 500);
         }
         
     }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = ProductUnitMaterial::with('product', 'material')->orderBy('id', 'desc');
+
+            if ($request->filled('material')) {
+                $query->whereHas('material', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->material . '%'); 
+                });
+            }
+
+            if ($request->filled('product')) {
+                $query->whereHas('product', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->product . '%'); 
+                });
+            }
+
+            if ($request->filled('size')) {
+                $query->where('size', 'ILIKE', '%' . $request->size . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('qty')) {
+                $query->where('qty', $request->qty);
+            }
+
+            if ($request->filled('product_id')) {
+                $query->where('product_id', $request->product_id);
+            }
+
+            $unitMaterials = $query->paginate(10);
+            return response()->json($unitMaterials);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch product unit materials',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function store(Request $request)
     {

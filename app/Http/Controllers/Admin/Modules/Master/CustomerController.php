@@ -21,6 +21,34 @@ class CustomerController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Customer::orderBy('id', 'desc');
+
+            if ($request->has('name') && !empty($request->name)) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%'); 
+            }
+
+            if ($request->has('email') && !empty($request->email)) {
+                $query->where('email', 'ILIKE', '%' . $request->email . '%');
+            }
+
+            if ($request->has('mobile') && !empty($request->mobile)) {
+                $query->where('mobile', 'LIKE', '%' . $request->mobile . '%'); 
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $customers = $query->paginate(10);
+            return response()->json($customers);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch customers'], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try{

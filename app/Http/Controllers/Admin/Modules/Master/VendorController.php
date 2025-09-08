@@ -22,6 +22,35 @@ class VendorController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Vendor::orderBy('id', 'desc');
+
+            if ($request->has('name') && !empty($request->name)) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%'); 
+            }
+
+            if ($request->has('email') && !empty($request->email)) {
+                $query->where('email', 'ILIKE', '%' . $request->email . '%');
+            }
+
+            if ($request->has('mobile') && !empty($request->mobile)) {
+                $query->where('mobile', 'LIKE', '%' . $request->mobile . '%'); 
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $vendors = $query->paginate(10);
+            return response()->json($vendors);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch vendors'], 500);
+        }
+    }
+
+
     public function store(Request $request)
     {
         try{

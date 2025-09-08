@@ -14,14 +14,72 @@ class MaterialController extends Controller
     public function getData(Request $request)
     {
         try{
-            $materials = Material::orderBy('id','desc')->paginate(10);
+            $materials = Material::with('category', 'group','unitOfMeasurement')->orderBy('id','desc')->paginate(10);
             return response()->json($materials);
         }catch(\Exception $e){
-            return response()->json(['error' => 'Failed to fetch materials'], 500);
+            return response()->json(['error' => 'Failed to fetch materials'.$e->getMessage()], 500);
         }
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Material::with('category', 'group','unitOfMeasurement')->orderBy('id', 'desc');
+
+            if ($request->filled('category')) {
+                $query->whereHas('category', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->category . '%'); 
+                });
+            }
+
+            if ($request->filled('group')) {
+                $query->whereHas('group', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->group . '%'); 
+                });
+            }
+
+            if ($request->filled('unitOfMeasurement')) {
+                $query->whereHas('unitOfMeasurement', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->unitOfMeasurement . '%'); 
+                });
+            }
+
+            if ($request->filled('opening_stock')) {
+                $query->where('opening_stock', 'ILIKE', '%' . $request->opening_stock . '%');
+            }
+
+            if ($request->filled('urgently_required')) {
+                $query->where('urgently_required', 'ILIKE', '%' . $request->urgently_required . '%');
+            }
+            
+            if ($request->filled('size')) {
+                $query->where('size', 'ILIKE', '%' . $request->size . '%');
+            }
+
+            if ($request->filled('tag')) {
+                $query->where('tag', 'ILIKE', '%' . $request->tag . '%');
+            }
+
+            if ($request->filled('price')) {
+                $query->where('price', 'ILIKE', '%' . $request->price . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+
+            $unitMaterials = $query->paginate(10);
+            return response()->json($unitMaterials);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch product unit materials',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function store(Request $request)
     {
         try{

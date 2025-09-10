@@ -12,12 +12,51 @@ class PackingSlipController extends Controller
     public function getData(Request $request)
     {
         try{
-            $packing_slips = PackingSlip::orderBy('id','desc')->paginate(10);
+            $packing_slips = PackingSlip::with('productionOrder', 'product')->orderBy('id','desc')->paginate(10);
             return response()->json($packing_slips);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch packing slip data'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try{
+            $query = PackingSlip::with('productionOrder', 'product')->orderBy('id','desc');
+
+            if($request->filled('unique_code')){
+                $query->whereHas('productionOrder', function ($q) use ($request){
+                    $q->where('unique_code', 'ILIKE', '%'. $request->unique_code  .'%');
+                });
+            }
+
+            if($request->filled('product')){
+                $query->whereHas('product', function ($q) use ($request){
+                    $q->where('name', 'ILIKE', '%'. $request->product  .'%');
+                });
+            }
+
+            if($request->filled('store')){
+                $query->where('store', 'ILIKE', '%'. $request->store  .'%');
+            }
+
+            if($request->filled('material_type')){
+                $query->where('material_type', 'ILIKE', '%'. $request->material_type  .'%');
+            }
+
+            if($request->filled('no_of_cartoon')){
+                $query->where('no_of_cartoon', 'ILIKE', '%'. $request->no_of_cartoon  .'%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            $packing_slips = $query->paginate(10);
+            return response()->json($packing_slips);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch packing slip data'], 500);
+        }
     }
 
     public function store(Request $request)
@@ -34,7 +73,7 @@ class PackingSlipController extends Controller
             $packing_slip->product_id = $request->product_id;
             $packing_slip->store = $request->store;
             $packing_slip->material_type = $request->material_type;
-            $packing_slip->no_of_cartons = $request->no_of_cartons;
+            $packing_slip->no_of_cartoon = $request->no_of_cartoon;
             $packing_slip->description = $request->description;
             $packing_slip->status = $request->status ?? 0;
             $packing_slip->save();
@@ -45,7 +84,7 @@ class PackingSlipController extends Controller
         }
         
     }
-
+ 
     public function edit(Request $request, $id)
     {
         try{
@@ -81,7 +120,7 @@ class PackingSlipController extends Controller
             $packing_slip->product_id = $request->product_id;
             $packing_slip->store = $request->store;
             $packing_slip->material_type = $request->material_type;
-            $packing_slip->no_of_cartons = $request->no_of_cartons;
+            $packing_slip->no_of_cartoon = $request->no_of_cartoon;
             $packing_slip->description = $request->description;
             $packing_slip->status = $request->status ?? $packing_slip->status;
             $packing_slip->save();

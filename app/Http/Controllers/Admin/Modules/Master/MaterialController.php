@@ -70,16 +70,17 @@ class MaterialController extends Controller
             }
 
 
-            $unitMaterials = $query->paginate(10);
-            return response()->json($unitMaterials);
+            $materials = $query->paginate(10);
+            return response()->json($materials);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Failed to fetch product unit materials',
+                'error' => 'Failed to fetch materials',
                 'message' => $e->getMessage()
             ], 500);
         }
     }
+    
     public function store(Request $request)
     {
         try{

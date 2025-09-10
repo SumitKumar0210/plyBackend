@@ -13,12 +13,50 @@ class LabourController extends Controller
     public function getData(Request $request)
     {
         try{
-            $labours = Labour::orderBy('id','desc')->paginate(10);
+            $labours = Labour::with('department')->orderBy('id','desc')->paginate(10);
             return response()->json($labours);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch labour'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Labour::with('department')->orderBy('id', 'desc');
+
+            if ($request->filled('department')) {
+                $query->whereHas('department', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->department . '%'); 
+                });
+            }
+
+            if ($request->filled('name')) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+            }
+
+            if ($request->filled('par_hour_cost')) {
+                $query->where('par_hour_cost', 'ILIKE', '%' . $request->par_hour_cost . '%');
+            }
+
+            if ($request->filled('overtime_hourly_rate')) {
+                $query->where('overtime_hourly_rate', 'ILIKE', '%' . $request->overtime_hourly_rate . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $labours = $query->paginate(10);
+            return response()->json($labours);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch labour',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

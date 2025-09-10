@@ -9,4 +9,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PackingSlip extends Model
 {
     use HasFactory,SoftDeletes;
+
+    public function productionOrder()
+    {
+        return $this->hasOne(ProductionOrder::class, 'id', 'po_id');
+    }
+
+    public function product()
+    {
+        return $this->hasOne(Product::class, 'id', 'product_id');
+    }
 }

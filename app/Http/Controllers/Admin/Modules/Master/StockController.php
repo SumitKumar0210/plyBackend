@@ -13,12 +13,46 @@ class StockController extends Controller
     public function getData(Request $request)
     {
         try{
-            $stocks = Stock::orderBy('id','desc')->paginate(10);
+            $stocks = Stock::with('material')->orderBy('id','desc')->paginate(10);
             return response()->json($stocks);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch Stocks'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Stock::with('material')->orderBy('id', 'desc');
+
+            if ($request->filled('material')) {
+                $query->whereHas('material', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->material . '%'); 
+                });
+            }
+
+            if ($request->filled('in_stock')) {
+                $query->where('in_stock', 'ILIKE', '%' . $request->in_stock . '%');
+            }
+
+            if ($request->filled('out_stock')) {
+                $query->where('out_stock', 'ILIKE', '%' . $request->out_stock . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $stocks = $query->paginate(10);
+            return response()->json($stocks);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch Stocks',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

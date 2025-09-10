@@ -10,4 +10,9 @@ class ProductionQualityCheck extends Model
 {
     use HasFactory,SoftDeletes;
     protected $table = 'production_quality_checks';
+
+    public function productionOrder()
+    {
+        return $this->hasOne(ProductionOrder::class, 'id', 'po_id');
+    }
 }

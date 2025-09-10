@@ -13,12 +13,53 @@ class MachineOperatorController extends Controller
     public function getData(Request $request)
     {
         try{
-            $operators = MachineOperator::orderBy('id','desc')->paginate(10);
+            $operators = MachineOperator::with('purchaseOrder', 'machine', 'user:id,name')->orderBy('id','desc')->paginate(10);
             return response()->json($operators);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch machine operators'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = MachineOperator::with('purchaseOrder', 'machine', 'user:id,name')->orderBy('id', 'desc');
+
+            if ($request->filled('machine')) {
+                $query->whereHas('machine', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->machine . '%'); 
+                });
+            }
+
+            if ($request->filled('purchase_no')) {
+                $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                    $q->where('purchase_no', 'ILIKE', '%' . $request->purchase_no . '%'); 
+                });
+            }
+            if ($request->filled('user')) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->user . '%'); 
+                });
+            }
+
+            if ($request->filled('runing_hours')) {
+                $query->where('runing_hours', 'ILIKE', '%' . $request->runing_hours . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $handTools = $query->paginate(10);
+            return response()->json($handTools);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch hand tools',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

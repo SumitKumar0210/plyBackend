@@ -12,12 +12,37 @@ class ProductionQualityCheckController extends Controller
     public function getData(Request $request)
     {
         try{
-            $quality_checks = ProductionQualityCheck::orderBy('id','desc')->paginate(10);
+            $quality_checks = ProductionQualityCheck::with('productionOrder')->orderBy('id','desc')->paginate(10);
             return response()->json($quality_checks);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch product quality data'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try{
+            
+            $query = ProductionQualityCheck::with('productionOrder')->orderBy('id','desc');
+
+            if($request->filled('unique_code')){
+                $query->whereHas('productionOrder', function ($q) use ($request){
+                    $q->where('unique_code', 'ILIKE', '%'. $request->unique_code  .'%');
+                });
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $quality_checks = $query->paginate(10);
+
+            return response()->json($quality_checks);
+
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch product quality data'], 500);
+        }
     }
 
     public function store(Request $request)

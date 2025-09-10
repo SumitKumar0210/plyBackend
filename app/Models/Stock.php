@@ -11,4 +11,9 @@ class Stock extends Model
     use HasFactory,SoftDeletes;
 
     protected $table = 'stocks';
+
+    public function material()
+    {
+        return $this->hasOne(Material::class, 'id', 'material_id');
+    }
 }

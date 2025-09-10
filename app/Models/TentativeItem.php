@@ -9,4 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TentativeItem extends Model
 {
     use HasFactory,SoftDeletes;
+
+    public function purchaseOrder()
+    {
+        return $this->hasOne(PurchaseOrder::class, 'id', 'po_id');
+    }
 }

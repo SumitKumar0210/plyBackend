@@ -13,12 +13,58 @@ class PurchaseOrderController extends Controller
     public function getData(Request $request)
     {
         try{
-            $purchaseOrders = PurchaseOrder::orderBy('id','desc')->paginate(10);
+            $purchaseOrders = PurchaseOrder::with('vendor','department')->orderBy('id','desc')->paginate(10);
             return response()->json($purchaseOrders);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch purchase orders'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = PurchaseOrder::with('vendor', 'department')->orderBy('id', 'desc');
+
+            if ($request->filled('vendor')) {
+                $query->whereHas('vendor', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->vendor . '%');
+                });
+            }
+
+            if ($request->filled('department')) {
+                $query->whereHas('department', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->department . '%');
+                });
+            }
+
+            if ($request->filled('purchase_no')) {
+                $query->where('purchase_no', 'ILIKE', '%' . $request->purchase_no . '%');
+            }
+
+            if ($request->filled('order_date')) {
+                $query->whereDate('order_date', $request->order_date);
+            }
+
+            if ($request->filled('expected_delivery_date')) {
+                $query->whereDate('expected_delivery_date', $request->expected_delivery_date);
+            }
+
+            // Search by Status
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $purchaseOrders = $query->paginate(10);
+
+            return response()->json($purchaseOrders);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch purchase orders',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

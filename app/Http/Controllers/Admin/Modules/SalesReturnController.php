@@ -13,12 +13,52 @@ class SalesReturnController extends Controller
     public function getData(Request $request)
     {
         try{
-            $handTools = SalesReturn::orderBy('id','desc')->paginate(10);
-            return response()->json($handTools);
+            $saleReturns = SalesReturn::with('product', 'purchaseOrder')->orderBy('id','desc')->paginate(10);
+            return response()->json($saleReturns);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch Sales return'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = SalesReturn::with('product', 'purchaseOrder')->orderBy('id', 'desc');
+
+            if ($request->filled('product')) {
+                $query->whereHas('product', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->product . '%'); 
+                });
+            }
+
+            if ($request->filled('purchase_no')) {
+                $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                    $q->where('purchase_no', 'ILIKE', '%' . $request->purchase_no . '%'); 
+                });
+            }
+
+            if ($request->filled('reason')) {
+                $query->where('reason', 'ILIKE', '%' . $request->reason . '%');
+            }
+
+            if ($request->filled('qty')) {
+                $query->where('qty', 'ILIKE', '%' . $request->qty . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $saleReturns = $query->paginate(10);
+            return response()->json($saleReturns);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch Sales return',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -33,23 +73,23 @@ class SalesReturnController extends Controller
             ]);
 
 
-            $handTool = new SalesReturn();
+            $saleReturn = new SalesReturn();
 
-            $handTool->po_id = $request->po_id;
-            $handTool->product_id = $request->product_id;
-            $handTool->qty = $request->qty;
-            $handTool->reason = $request->reason;
-            $handTool->status = $request->status ?? 0;
+            $saleReturn->po_id = $request->po_id;
+            $saleReturn->product_id = $request->product_id;
+            $saleReturn->qty = $request->qty;
+            $saleReturn->reason = $request->reason;
+            $saleReturn->status = $request->status ?? 0;
             if($request->hasFile('doc')) {
                 $image = $request->file('doc');
                $randomName = rand(10000000, 99999999);
                 $imageName = time().'_'.$randomName . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('uploads/SalesReport'), $imageName);
-                $handTool->doc = '/uploads/SalesReport/'.$imageName;
+                $saleReturn->doc = '/uploads/SalesReport/'.$imageName;
             }   
-            $handTool->save();
+            $saleReturn->save();
             return response()->json(['message' => 'Sales return created successfully',
-                'data' => $handTool]);
+                'data' => $saleReturn]);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to store sales return', $e->getMessage()], 500);
         }
@@ -59,13 +99,13 @@ class SalesReturnController extends Controller
     public function edit(Request $request, $id)
     {
         try{
-            $handTool =SalesReturn::find($id);
+            $saleReturn =SalesReturn::find($id);
 
-            if(!$handTool){
+            if(!$saleReturn){
                 return response()->json(['error' => 'Sales return not found'], 404);
             }
             return response()->json(['message' => 'Sales return fetch  successfully',
-                'data' => $handTool]);
+                'data' => $saleReturn]);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch sales return', $e->getMessage()], 500);
         }
@@ -82,27 +122,27 @@ class SalesReturnController extends Controller
                 'reason'      => 'nullable|string|max:500',
             ]);
 
-            $handTool =SalesReturn::find($id);
+            $saleReturn =SalesReturn::find($id);
 
-            if(!$handTool){
+            if(!$saleReturn){
                 return response()->json(['error' => 'Sales return not found'], 404);
             }
-            $handTool->po_id = $request->po_id;
-            $handTool->product_id = $request->product_id;
-            $handTool->qty = $request->qty;
-            $handTool->reason = $request->reason;
+            $saleReturn->po_id = $request->po_id;
+            $saleReturn->product_id = $request->product_id;
+            $saleReturn->qty = $request->qty;
+            $saleReturn->reason = $request->reason;
             if($request->hasFile('doc')) {
                 $image = $request->file('doc');
                $randomName = rand(10000000, 99999999);
                 $imageName = time().'_'.$randomName . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('uploads/SalesReport'), $imageName);
-                $handTool->doc = '/uploads/SalesReport/'.$imageName;
+                $saleReturn->doc = '/uploads/SalesReport/'.$imageName;
             }   
-            $handTool->status = $request->status ?? $handTool->status;
-            $handTool->save();
+            $saleReturn->status = $request->status ?? $saleReturn->status;
+            $saleReturn->save();
 
             return response()->json(['message' => 'Sales return updated  successfully',
-                'data' => $handTool]);
+                'data' => $saleReturn]);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch sales return', $e->getMessage()], 500);
         }
@@ -111,13 +151,13 @@ class SalesReturnController extends Controller
 
     public function delete(Request $request, $id){
         try{
-            $handTool =SalesReturn::find($id);
+            $saleReturn =SalesReturn::find($id);
 
-            if(!$handTool){
+            if(!$saleReturn){
                 return response()->json(['error' => 'Sales return not found'], 404);
             }
 
-            $handTool->delete();
+            $saleReturn->delete();
             return response()->json(['message' => 'Sales return deleted  successfully']);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch sales return', $e->getMessage()], 500);
@@ -129,13 +169,13 @@ class SalesReturnController extends Controller
     {
         try{
             $id = $request->id;
-            $handTool =SalesReturn::find($id);
+            $saleReturn =SalesReturn::find($id);
 
-            if(!$handTool){
+            if(!$saleReturn){
                 return response()->json(['error' => 'Sales return not found'], 404);
             }
-            $handTool->status= !$handTool->status;
-            $handTool->save();
+            $saleReturn->status= !$saleReturn->status;
+            $saleReturn->save();
 
             return response()->json(['message' => 'Sales return status updated  successfully']);
         }catch(\Exception $e){

@@ -13,12 +13,67 @@ class ProductController extends Controller
     public function getData(Request $request)
     {
         try{
-            $products = Product::orderBy('id','desc')->paginate(10);
+            $products = Product::with('group')->orderBy('id','desc')->paginate(10);
             return response()->json($products);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch Products'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Product::with('group')->orderBy('id', 'desc');
+
+            if ($request->filled('group')) {
+                $query->whereHas('group', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->group . '%'); 
+                });
+            }
+
+            if ($request->filled('name')) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+            }
+
+            if ($request->filled('modal')) {
+                $query->where('modal', 'ILIKE', '%' . $request->modal . '%');
+            }
+
+            if ($request->filled('size')) {
+                $query->where('size', 'ILIKE', '%' . $request->size . '%');
+            }
+
+            if ($request->filled('color')) {
+                $query->where('color', 'ILIKE', '%' . $request->color . '%');
+            }
+
+            if ($request->filled('hsn_code')) {
+                $query->where('hsn_code', 'ILIKE', '%' . $request->hsn_code . '%');
+            }
+
+            if ($request->filled('product_type')) {
+                $query->where('product_type', 'ILIKE', '%' . $request->product_type . '%');
+            }
+
+            if ($request->filled('color')) {
+                $query->where('color', 'ILIKE', '%' . $request->color . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+
+            $products = $query->paginate(10);
+            return response()->json($products);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch products',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

@@ -22,6 +22,30 @@ class GradeController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Grade::orderBy('id', 'desc');
+
+            if ($request->filled('name')) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $grades = $query->paginate(10);
+            return response()->json($grades);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch grades',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try{

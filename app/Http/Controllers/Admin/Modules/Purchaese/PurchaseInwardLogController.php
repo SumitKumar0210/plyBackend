@@ -12,12 +12,62 @@ class PurchaseInwardLogController extends Controller
     public function getData(Request $request)
     {
         try{
-            $logs = PurchaseInwardLog::orderBy('id','desc')->paginate(10);
+            $logs = PurchaseInwardLog::with('purchaseOrder','material')->orderBy('id','desc')->paginate(10);
             return response()->json($logs);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch Purchase inward logs'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = PurchaseInwardLog::with('purchaseOrder','material')->orderBy('id', 'desc');
+
+            if ($request->filled('purchase_no')) {
+                $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                    $q->where('purchase_no', 'ILIKE', '%' . $request->purchase_no . '%');
+                });
+            }
+
+            if ($request->filled('material')) {
+                $query->whereHas('material', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->material . '%');
+                });
+            }
+
+            if ($request->filled('qty')) {
+                $query->where('qty', 'ILIKE', '%' . $request->qty . '%');
+            }
+
+            if ($request->filled('price')) {
+                $query->where('price', 'ILIKE', '%' . $request->price . '%');
+            }
+
+            if ($request->filled('rate')) {
+                $query->where('rate', 'ILIKE', '%' . $request->rate . '%');
+            }
+
+            if ($request->filled('invoice_no')) {
+                $query->where('invoice_no', 'ILIKE', '%' . $request->invoice_no . '%');
+            }
+
+            // Search by Status
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $purchaseOrders = $query->paginate(10);
+
+            return response()->json($purchaseOrders);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch purchase orders',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

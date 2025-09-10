@@ -10,4 +10,9 @@ class Labour extends Model
 {
     use HasFactory,SoftDeletes;
     protected $table = 'labours';
+
+    public function department()
+    {
+        return $this->hasOne(Department::class, 'id', 'department_id');
+    }
 }

@@ -21,6 +21,36 @@ class BranchController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Branch::orderBy('id', 'desc');
+
+            if ($request->filled('name')) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+            }
+            if ($request->filled('mobile')) {
+                $query->where('mobile', 'ILIKE', '%' . $request->mobile . '%');
+            }
+            if ($request->filled('address')) {
+                $query->where('address', 'ILIKE', '%' . $request->address . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $branches = $query->paginate(10);
+            return response()->json($branches);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch branch',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try{

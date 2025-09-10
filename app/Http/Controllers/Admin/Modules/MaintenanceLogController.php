@@ -13,12 +13,44 @@ class MaintenanceLogController extends Controller
     public function getData(Request $request)
     {
         try{
-            $logs = MaintenanceLog::orderBy('id','desc')->paginate(10);
+            $logs = MaintenanceLog::with('user:id,name','machine')->orderBy('id','desc')->paginate(10);
+            return response()->json($logs);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch maintenance logs'.$e->getMessage()], 500);
+        }
+        
+    }
+
+    public function search(Request $request)
+    {
+        try{
+            $query = MaintenanceLog::with(['user:id,name', 'machine'])->orderBy('id', 'desc');
+
+            if ($request->filled('user')) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->user . '%');
+                });
+            }
+
+            if ($request->filled('machien')) {
+                $query->whereHas('machien', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->machien . '%');
+                });
+            }
+
+            if ($request->filled('remark')) {
+                $query->where('remark', 'ILIKE', '%' . $request->remark . '%');  
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $logs = $query->paginate(10);
             return response()->json($logs);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch maintenance logs'], 500);
         }
-        
     }
 
     public function store(Request $request)

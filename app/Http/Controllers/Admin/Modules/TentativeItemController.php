@@ -12,12 +12,38 @@ class TentativeItemController extends Controller
     public function getData(Request $request)
     {
         try{
-            $itmes = TentativeItem::orderBy('id','desc')->paginate(10);
+            $itmes = TentativeItem::with('purchaseOrder')->orderBy('id','desc')->paginate(10);
             return response()->json($itmes);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch tentative item'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try{
+            $query = TentativeItem::with('purchaseOrder')->orderBy('id','desc');
+
+            if($request->filled('purchase_no')){
+                $query->whereHas('purchaseOrder', function($q) use ($request){
+                    $q->where('purchase_no','ILIKE', '%'. $request->purchase_no . '%');
+                });
+            }
+
+            if ($request->filled('items')) {
+                $query->whereRaw("product_items::jsonb @> ?", [json_encode([['name' => $request->items]])]);
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $itmes = $query->paginate(10);
+            return response()->json($itmes);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch tentative item'], 500);
+        }
     }
 
     public function store(Request $request)
@@ -32,7 +58,7 @@ class TentativeItemController extends Controller
             $itme = new TentativeItem();
 
             $itme->po_id = $request->po_id;
-            $itme->product_items = $request->product_items ? json_encode($request->product_items) : null;
+            $itme->product_items = $request->product_items ?? null;
             $itme->status = $request->status ?? 0;
             $itme->save();
             return response()->json(['message' => 'Tentative item created successfully',

@@ -26,8 +26,8 @@ return new class extends Migration
             $table->tinyInteger('status')->default(0);
 
             // Relations
-            $table->foreign('po_id')->references('id')->on('packing_lists')->onDelete('set null');
-            $table->foreign('product_id')->references('id')->on('production_orders')->onDelete('set null');
+            $table->foreign('po_id')->references('id')->on('production_orders')->onDelete('set null');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('set null');
 
             $table->timestamps();
             $table->softDeletes(); // in case you need to archive products

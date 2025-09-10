@@ -12,7 +12,33 @@ class GrnPurchaseController extends Controller
     public function getData(Request $request)
     {
         try{
-            $purchases = GrnPurchase::orderBy('id','desc')->paginate(10);
+            $purchases = GrnPurchase::with('purchaseOrder')->orderBy('id','desc')->paginate(10);
+            return response()->json($purchases);
+        }catch(\Exception $e){
+            return response()->json(['error' => 'Failed to fetch grn purchases data'], 500);
+        }
+        
+    }
+
+    public function search(Request $request)
+    {
+        try{
+            $query = GrnPurchase::with('purchaseOrder')->orderBy('id','desc');
+
+            if($request->filled('purchase_no')){
+                $query->whereHas('purchaseOrder', function ($q) use ($request){
+                    $q->where('purchase_no', 'ILIKE', '%'. $request->purchase_no .'%');
+                });
+            }
+
+            if($request->filled('note')){
+                $query->where('note', 'ILIKE', '%'. $request->note .'%');
+            }
+            
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            $purchases = $query->paginate(10);
             return response()->json($purchases);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch grn purchases data'], 500);

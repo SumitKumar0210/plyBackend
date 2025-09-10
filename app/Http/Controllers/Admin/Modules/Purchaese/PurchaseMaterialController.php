@@ -12,12 +12,62 @@ class PurchaseMaterialController extends Controller
     public function getData(Request $request)
     {
         try{
-            $materials  = PurchaseMaterial::orderBy('id','desc')->paginate(10);
+            $materials  = PurchaseMaterial::with('purchaseOrder','material')->orderBy('id','desc')->paginate(10);
             return response()->json($materials);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch purchase materials'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = PurchaseMaterial::with('purchaseOrder','material')->orderBy('id', 'desc');
+
+            if ($request->filled('purchase_no')) {
+                $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                    $q->where('purchase_no', 'ILIKE', '%' . $request->purchase_no . '%');
+                });
+            }
+
+            if ($request->filled('material')) {
+                $query->whereHas('material', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->material . '%');
+                });
+            }
+
+            if ($request->filled('qty')) {
+                $query->where('qty', 'ILIKE', '%' . $request->qty . '%');
+            }
+
+            if ($request->filled('size')) {
+                $query->where('size', 'ILIKE', '%' . $request->size . '%');
+            }
+
+            if ($request->filled('rate')) {
+                $query->where('rate', 'ILIKE', '%' . $request->rate . '%');
+            }
+
+            if ($request->filled('actual_qty')) {
+                $query->where('actual_qty', 'ILIKE', '%' . $request->actual_qty . '%');
+            }
+
+            // Search by Status
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $materials = $query->paginate(10);
+
+            return response()->json($materials);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch materials',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

@@ -13,12 +13,54 @@ class HandToolController extends Controller
     public function getData(Request $request)
     {
         try{
-            $handTools = HandTool::orderBy('id','desc')->paginate(10);
+            $handTools = HandTool::with('material', 'labour', 'department')->orderBy('id','desc')->paginate(10);
             return response()->json($handTools);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch hand tools'], 500);
         }
         
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = HandTool::with('material', 'labour', 'department')->orderBy('id', 'desc');
+
+            if ($request->filled('material')) {
+                $query->whereHas('material', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->material . '%'); 
+                });
+            }
+
+            if ($request->filled('labour')) {
+                $query->whereHas('labour', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->labour . '%'); 
+                });
+            }
+
+            if ($request->filled('department')) {
+                $query->whereHas('department', function ($q) use ($request) {
+                    $q->where('name', 'ILIKE', '%' . $request->department . '%'); 
+                });
+            }
+
+            if ($request->filled('no_of_item')) {
+                $query->where('no_of_item', 'ILIKE', '%' . $request->no_of_item . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $handTools = $query->paginate(10);
+            return response()->json($handTools);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch hand tools',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)

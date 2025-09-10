@@ -22,6 +22,30 @@ class GroupController extends Controller
         
     }
 
+    public function search(Request $request)
+    {
+        try {
+            $query = Group::orderBy('id', 'desc');
+
+            if ($request->filled('name')) {
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+            }
+
+            if ($request->has('status') && $request->status !== null) {
+                $query->where('status', $request->status);
+            }
+
+            $group = $query->paginate(10);
+            return response()->json($group);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch groups',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try{

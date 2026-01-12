@@ -10,8 +10,13 @@ class Product extends Model
 {
     use HasFactory,SoftDeletes;
 
+    // public function group()
+    // {
+    //     return $this->hasOne(Group::class, 'id', 'group_id');
+    // }
+    
     public function group()
     {
-        return $this->hasOne(Group::class, 'id', 'group_id');
+        return $this->belongsTo(Group::class, 'group_id'); // 'group_id' is the foreign key in products table
     }
 }

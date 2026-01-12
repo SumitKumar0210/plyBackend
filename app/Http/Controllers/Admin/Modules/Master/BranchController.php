@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use DB;
 
 class BranchController extends Controller
 {
     public function getData(Request $request)
     {
+    //   DB::table('migrations')->where('id', 21)->delete();
+      
         try{
             $branches = Branch::orderBy('id','desc')->paginate(10);
             return response()->json($branches);

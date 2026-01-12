@@ -13,6 +13,11 @@ class Labour extends Model
 
     public function department()
     {
-        return $this->hasOne(Department::class, 'id', 'department_id');
+        return $this->belongsTo(Department::class);
+    }
+    
+     public function shift()
+    {
+        return $this->belongsTo(WorkShift::class, 'shift_id', 'id');
     }
 }

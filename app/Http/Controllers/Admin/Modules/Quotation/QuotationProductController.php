@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Modules\Quotation;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Quotation;
 use App\Models\QuotationProduct;
 use Illuminate\Validation\Rule;
 
@@ -12,8 +13,8 @@ class QuotationProductController extends Controller
     public function getData(Request $request)
     {
         try{
-            $products = QuotationProduct::orderBy('id','desc')->paginate(10);
-            return response()->json($products);
+            $orders = Quotation::with('customer:id,name,address,state_id,city,zip_code','customer.state:id,name')->where('status', '2')->select('id','product_ids','grand_total','created_at','status','priority','customer_id')->orderBy('id','desc')->paginate($request->limit);
+            return response()->json($orders);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch quotation products'], 500);
         }

@@ -8,10 +8,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TentativeItem extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-    public function purchaseOrder()
+    protected $fillable = [
+        'product_id',
+        'material_id',
+        'qty',
+    ];
+
+    public function product()
     {
-        return $this->hasOne(PurchaseOrder::class, 'id', 'po_id');
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+    public function material()
+    {
+        return $this->belongsTo(Material::class, 'material_id');
     }
 }

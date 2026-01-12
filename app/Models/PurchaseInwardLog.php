@@ -15,8 +15,9 @@ class PurchaseInwardLog extends Model
         return $this->hasOne(PurchaseOrder::class, 'id', 'purchase_order_id');
     }
 
-    public function material()
+     public function vendor()
     {
-        return $this->hasOne(Material::class, 'id', 'material_id');
+        return $this->hasOne(Vendor::class, 'id', 'vendor_id');
     }
+
 }

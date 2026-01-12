@@ -10,6 +10,28 @@ use Illuminate\Validation\Rule;
 
 class MachineController extends Controller
 {
+    
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:machines.read')->only([
+            'getData'
+        ]);
+
+        $this->middleware('permission:machines.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:machines.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:machines.delete')->only([
+            'delete'
+        ]);
+    }
+    
     public function getData(Request $request)
     {
         try{
@@ -43,7 +65,7 @@ class MachineController extends Controller
             $machine->cycle_days = $request->cycle_days;
             $machine->cycle_month = $request->cycle_month;
             $machine->message = $request->message;
-            $machine->status = $request->status ?? 0;
+            $machine->status = $request->status ?? 1;
             $machine->save();
             return response()->json(['message' => 'Machine created successfully',
                 'data' => $machine]);

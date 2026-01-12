@@ -8,13 +8,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
+use App\Models\UserType;
 use Mail;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register','forgotPassword','resetPassword','updatePassword']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register','forgotPassword','resetPassword','updatePassword', 'getUser']]);
     }
 
     /**
@@ -50,8 +51,10 @@ class AuthController extends Controller
         $user->access_token = $token;
         $user->token_expires_at = $tokenExpiresAt;
         $user->save();
+        $user->load('userType');
+        // dd($token);
 
-        return $this->respondWithToken($token, $expiresInSeconds);
+        return $this->respondWithToken($token, $expiresInSeconds, $user);
     }
 
 
@@ -60,23 +63,43 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+       
         $credentials = $request->only('email', 'password');
-
-        if (! $token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+    
+        if (empty($credentials['email']) || empty($credentials['password'])) {
+            return response()->json(['error' => 'Email and password are required.'], 422);
         }
-
-        $user = auth()->user();
-
-        // Example: 1 year expiry
-        $expiresInSeconds = 60 * 60 * 24 * 365;
+    
+        $user = \App\Models\User::where('email', $credentials['email'])->first();
+    
+        if (! $user) {
+            return response()->json(['error' => 'No account found with this email.'], 404);
+        }
+    
+        if ($user->status == '0') {
+            return response()->json([
+                'error' => 'Your account is inactive. Please contact the administrator.'
+            ], 403);
+        }
+    
+      
+        if (! $token = auth()->attempt($credentials)) {
+            return response()->json(['error' => 'Incorrect password. Please try again.'], 401);
+        }
+    
+        $expiresInSeconds = 60 * 60 * 24 * 365; // 1 year
         $tokenExpiresAt = now()->addSeconds($expiresInSeconds);
-
+    
         $user->access_token = $token;
         $user->token_expires_at = $tokenExpiresAt;
         $user->save();
-
-        return $this->respondWithToken($token, $expiresInSeconds);
+        $user->load('userType');
+        $user->load('roles', 'permissions'); 
+       
+        // $roles = $user->getRoleNames();
+        // $permissions = $user->getAllPermissions()->pluck('name');
+        
+        return $this->respondWithToken($token, $expiresInSeconds,$user);
     }
 
     /**
@@ -111,9 +134,21 @@ class AuthController extends Controller
     /**
      * Get the authenticated User
      */
-    public function me()
+    // public function me(Request $request)
+    // {
+    //     return response()->json(auth()->user());
+    // }
+    
+    public function me(Request $request)
     {
-        return response()->json(auth()->user());
+        $user = $request->user();
+        $user->load('roles', 'permissions');
+    
+        return response()->json([
+            'user' => $user->only(['id', 'name', 'email', 'access_token', 'image']),
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name')  // 
+        ]);
     }
 
     /**
@@ -146,9 +181,12 @@ class AuthController extends Controller
     /**
      * Respond with token
      */
-    protected function respondWithToken($token, $expiresInSeconds)
+    protected function respondWithToken($token, $expiresInSeconds, $user)
     {
         return response()->json([
+            'user_name' => $user->name,
+            'image' => $user->image,
+            'type' => optional($user->userType)->name ?? '',
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => $expiresInSeconds
@@ -157,41 +195,45 @@ class AuthController extends Controller
     
     public function forgotPassword(Request $request)
     {
-      
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-
+    
         $user = User::where('email', $request->email)->first();
-
+    
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
-
-        // Token & expiry
-        $expire_at = \Carbon\Carbon::now()->addMinutes(10); // Token valid for 10 minutes
-        $token = bin2hex(random_bytes(16)); // Plain token (to send in mail)
-
-        // Save hashed token & expiry in DB
+    
+        // Generate token and expiry
+        $expire_at = \Carbon\Carbon::now()->addMinutes(10);
+        $token = bin2hex(random_bytes(16));
+    
+        // Save hashed token and expiry
         $user->update([
-            'reset_token' => Hash::make($token),   
+            'reset_token' => Hash::make($token),
             'reset_link_expires_at' => $expire_at
         ]);
-
-        // Generate reset link (send plain token)
-        $url = url('/api/reset-password?id='.$user->id.'&token='.$token);
-
-        // Send mail
-        Mail::raw('Click here to reset your password: '.$url, function ($message) use ($user) {
-            $message->to('sumitkr56569@gmail.com')
-                    ->subject('Password Reset Request');
-        });
-
-        return response()->json(['message' => 'Password reset link has been sent to your email.']);
+    
+        // Create reset URL
+        $url = url('/api/reset-password?id=' . $user->id . '&token=' . $token);
+    
+        try {
+            // Send email to user
+            Mail::raw('Click here to reset your password: ' . $url, function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Password Reset Request');
+            });
+    
+            return response()->json(['message' => 'Password reset link has been sent to your email.']);
+        } catch (\Exception $e) {
+             \Log::error($e->getMessage());
+            return response()->json(['error' => 'Failed to send email.'], 500);
+        }
     }
 
 
@@ -252,5 +294,13 @@ class AuthController extends Controller
         ]);
 
         return response()->json(['message' => 'Password has been reset successfully.']);
+    }
+    
+    public function getUser()
+    {
+        $user = User::all();
+        
+        return response()->json([$user]);
+        
     }
 }

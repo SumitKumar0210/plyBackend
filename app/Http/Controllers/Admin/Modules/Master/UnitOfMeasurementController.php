@@ -11,12 +11,39 @@ use Illuminate\Validation\Rule;
 
 class UnitOfMeasurementController extends Controller
 {
+    
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:uom.read')->only([
+            'getData', 'search'
+        ]);
+
+        $this->middleware('permission:uom.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:uom.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:uom.delete')->only([
+            'delete'
+        ]);
+    }
+    
     public function getData(Request $request)
     {
         try{
            
-            $units = UnitOfMeasurement::orderBy('id','desc')->paginate(10);
-            return response()->json($units);
+            $query = UnitOfMeasurement::orderBy('id','desc');
+            if ($request->status) {
+                $query->where('status', '1');
+            }
+            $units = $query->get();
+            $arr = [ 'data' => $units];
+            return response()->json($arr);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch unit of measurment'], 500);
         }
@@ -56,7 +83,7 @@ class UnitOfMeasurementController extends Controller
 
             $unit = new UnitOfMeasurement();
             $unit->name = $request->name;
-            $unit->status = $request->status ?? 0;
+            $unit->status = $request->status ?? 1;
             $unit->save();
             return response()->json(['message' => 'Unit of measurment created successfully',
                 'data' => $unit]);

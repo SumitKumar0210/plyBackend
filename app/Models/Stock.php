@@ -11,9 +11,17 @@ class Stock extends Model
     use HasFactory,SoftDeletes;
 
     protected $table = 'stocks';
+    protected $fillable = [
+        'id',
+        'product_id',
+        'in_stock',
+        'out_stock',
+        'available_qty',
+        'remark',
+        ];
 
-    public function material()
+    public function product()
     {
-        return $this->hasOne(Material::class, 'id', 'material_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }

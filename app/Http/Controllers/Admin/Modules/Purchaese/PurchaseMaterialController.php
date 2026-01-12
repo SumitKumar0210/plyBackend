@@ -9,6 +9,28 @@ use Illuminate\Validation\Rule;
 
 class PurchaseMaterialController extends Controller
 {
+    // public function __construct()
+    // {
+    //     $this->middleware('auth:api');
+
+    //     $this->middleware('permission:purchase_order.read')->only([
+    //         'getData', 'search'
+    //     ]);
+
+    //     $this->middleware('permission:purchase_order.create')->only([
+    //         'store'
+    //     ]);
+
+    //     $this->middleware('permission:purchase_order.update')->only([
+    //         'edit', 'update', 'statusUpdate'
+    //     ]);
+
+    //     $this->middleware('permission:purchase_order.delete')->only([
+    //         'delete'
+    //     ]);
+        
+    // }
+    
     public function getData(Request $request)
     {
         try{

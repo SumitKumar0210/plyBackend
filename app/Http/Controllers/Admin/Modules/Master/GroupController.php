@@ -11,11 +11,39 @@ use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
+    
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:groups.read')->only([
+            'getData', 'search'
+        ]);
+
+        $this->middleware('permission:groups.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:groups.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:groups.delete')->only([
+            'delete'
+        ]);
+    }
+
+
     public function getData(Request $request)
     {
         try{
-            $group = Group::orderBy('id','desc')->paginate(10);
-            return response()->json($group);
+            $query = Group::orderBy('id', 'desc');
+
+            if ($request->status) {
+                $query->where('status', '1');
+            }
+            $groups = $query->get();
+            return response()->json(['data' => $groups]);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch groups'], 500);
         }
@@ -62,7 +90,7 @@ class GroupController extends Controller
             $group = new Group();
             $group->name = $request->name;
             $group->created_by = auth()->user()->id;
-            $group->status = $request->status ?? 0;
+            $group->status = $request->status ?? 1;
             $group->save();
             return response()->json(['message' => 'Group created successfully',
                 'data' => $group]);

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Spatie\Permission\Traits\HasRoles;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Tymon\JWTAuth\Contracts\JWTSubject; // <-- add this
 
 class User extends Authenticatable implements JWTSubject // <-- implement interface
@@ -18,6 +20,10 @@ class User extends Authenticatable implements JWTSubject // <-- implement interf
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
+    use SoftDeletes;
+    use HasRoles;
+    
+    protected $guard_name = 'api';
 
     protected $fillable = [
         'name',
@@ -45,5 +51,9 @@ class User extends Authenticatable implements JWTSubject // <-- implement interf
     public function getJWTCustomClaims()
     {
         return [];
+    }
+    
+    public function userType(){
+        return $this->belongsTo(UserType::class);
     }
 }

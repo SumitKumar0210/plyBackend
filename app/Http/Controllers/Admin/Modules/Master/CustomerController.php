@@ -10,44 +10,88 @@ use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:customers.read')->only([
+            'getData','search'
+        ]);
+
+        $this->middleware('permission:customers.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:customers.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:customers.delete')->only([
+            'delete'
+        ]);
+    }
+    
     public function getData(Request $request)
     {
-        try{
-            $customers = Customer::orderBy('id','desc')->paginate(10);
-            return response()->json($customers);
-        }catch(\Exception $e){
-            return response()->json(['error' => 'Failed to fetch customers'], 500);
+        try {
+            $query = Customer::with('state')->orderByDesc('id');
+    
+            if ($request->filled('status')) {
+                $customers = $query->where('status', $request->status)->get();
+    
+            }
+                return response()->json([
+                    'data' => $customers,
+                    'message' => 'customers fetched successfully!'
+                ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch customers',
+                'details' => $e->getMessage(),
+            ], 500);
         }
-        
     }
+
 
     public function search(Request $request)
     {
         try {
-            $query = Customer::orderBy('id', 'desc');
+    
+            $search = $request->search;
 
-            if ($request->has('name') && !empty($request->name)) {
-                $query->where('name', 'ILIKE', '%' . $request->name . '%'); 
-            }
+            $customers = Customer::with('state')
+                ->when($request->active, function ($q) {
+                    $q->where('status', '1');
+                })
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($query) use ($search) {
+                        $query->where('name', 'ILIKE', "%{$search}%")
+                              ->orWhere('mobile', 'ILIKE', "%{$search}%")
+                              ->orWhere('email', 'ILIKE', "%{$search}%")
+                              ->orWhere('gst_no', 'ILIKE', "%{$search}%")
+                              ->orWhere('city', 'ILIKE', "%{$search}%")
+                              ->orWhere('address', 'ILIKE', "%{$search}%")
+                              ->orWhere('zip_code', 'ILIKE', "%{$search}%");
+                    });
+                })
+                ->orderByDesc('id')
+                ->paginate($request->limit ?? 10);
 
-            if ($request->has('email') && !empty($request->email)) {
-                $query->where('email', 'ILIKE', '%' . $request->email . '%');
-            }
-
-            if ($request->has('mobile') && !empty($request->mobile)) {
-                $query->where('mobile', 'LIKE', '%' . $request->mobile . '%'); 
-            }
-
-            if ($request->has('status') && $request->status !== null) {
-                $query->where('status', $request->status);
-            }
-
-            $customers = $query->paginate(10);
-            return response()->json($customers);
+    
+            return response()->json([
+                'data' => $customers,
+                'message' => 'Customers fetched successfully!'
+            ], 200);
+    
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to fetch customers'], 500);
+            return response()->json([
+                'error' => 'Failed to fetch customers',
+                'details' => $e->getMessage(),
+            ], 500);
         }
     }
+
 
     public function store(Request $request)
     {
@@ -71,12 +115,14 @@ class CustomerController extends Controller
             $customers->email = $request->email;
             $customers->address = $request->address;
             $customers->city = $request->city;
-            // $customers->state_id = $request->state_id;
+            $customers->state_id = $request->state_id;
             $customers->zip_code = $request->zip_code;
             $customers->note = $request->note;
+            $customers->gst_no = $request->gst_no;
             $customers->created_by = auth()->user()->id;
-            $customers->status = $request->status ?? 0;
+            $customers->status = '1';
             $customers->save();
+            $customers->load('state');
             return response()->json(['message' => 'Customer created successfully',
                 'data' => $customers]);
         }catch(\Exception $e){
@@ -133,9 +179,11 @@ class CustomerController extends Controller
             $customers->state_id = $request->state_id;
             $customers->zip_code = $request->zip_code;
             $customers->note = $request->note;
+            $customers->gst_no = $request->gst_no;
             $customers->created_by = auth()->user()->id;
             $customers->status = $request->status ?? $customers->status;
             $customers->save();
+            $customers->load('state');
 
             return response()->json(['message' => 'Customer updated  successfully',
                 'data' => $customers]);

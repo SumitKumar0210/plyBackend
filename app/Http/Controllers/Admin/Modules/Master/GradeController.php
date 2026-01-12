@@ -14,8 +14,9 @@ class GradeController extends Controller
     public function getData(Request $request)
     {
         try{
-            $grades = Grade::orderBy('id','desc')->paginate(10);
-            return response()->json($grades);
+            $grades = Grade::orderBy('id','desc')->get();
+            $arr = [ 'data' => $grades];
+            return response()->json($arr);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch grades'], 500);
         }
@@ -62,7 +63,7 @@ class GradeController extends Controller
             $grade = new Grade();
             $grade->name = $request->name;
             $grade->created_by = auth()->user()->id;
-            $grade->status = $request->status ?? 0;
+            $grade->status = $request->status ?? 1;
             $grade->save();
             return response()->json(['message' => 'Grade created successfully',
                 'data' => $grade]);

@@ -16,7 +16,7 @@ return new class extends Migration
             
             // Basic Info
             $table->string('name');
-            $table->string('modal')->nullable(); // Stock Keeping Unit / Product Code
+            $table->string('model')->nullable(); // Stock Keeping Unit / Product Code
             $table->string('size')->nullable();
             $table->string('color', 100)->nullable();
             $table->string('hsn_code', 100)->nullable();

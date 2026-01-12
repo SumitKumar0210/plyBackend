@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name'); 
             $table->smallInteger('status')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
+            $table->smallInteger('sequence')->nullable();
             $table->timestamps(); 
             $table->softDeletes(); 
         });

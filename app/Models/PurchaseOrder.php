@@ -19,4 +19,9 @@ class PurchaseOrder extends Model
     {
         return $this->hasOne(Department::class, 'id', 'department_id');
     }
+
+    public function inward()
+    {
+        return $this->hasOne(PurchaseInwardLog::class, 'purchase_order_id', 'id');
+    }
 }

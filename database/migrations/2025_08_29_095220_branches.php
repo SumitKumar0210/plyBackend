@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('branches', function (Blueprint $table) {
-            $table->id(); // Auto-incrementing BIGINT primary key
+            // $table->id(); // Auto-incrementing BIGINT primary key
+            $table->bigIncrements('id'); 
+
             $table->string('name', 100);
             $table->bigInteger('mobile')->nullable(); // Increased precision for realistic values
             $table->text('address')->nullable();  

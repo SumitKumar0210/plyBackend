@@ -12,6 +12,7 @@
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
         "livewire/livewire": "^2.11",
+        "spatie/laravel-permission": "^6.24",
         "tymon/jwt-auth": "^2.2",
         "yaza/laravel-google-drive-storage": "^2.0"
     },
@@ -29,7 +30,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+         "files": [
+            "app/Helpers/ProductionHelper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

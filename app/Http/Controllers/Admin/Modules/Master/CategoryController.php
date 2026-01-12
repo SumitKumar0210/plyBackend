@@ -11,11 +11,39 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:categories.read')->only([
+            'getData', 'search'
+        ]);
+
+        $this->middleware('permission:categories.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:categories.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:categories.delete')->only([
+            'delete'
+        ]);
+    }
+    
     public function getData(Request $request)
     {
         try{
-            $categories = Category::orderBy('id','desc')->paginate(10);
-            return response()->json($categories);
+            $query = Category::with('group')->orderBy('id','desc');
+            if ($request->status) {
+                $query->where('status', '1');
+            }
+            
+            $categories = $query->get();
+            $arr = [ 'data' => $categories ];
+            return response()->json($arr);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch Categorys'], 500);
         }
@@ -58,6 +86,9 @@ class CategoryController extends Controller
             $category->created_by = auth()->user()->id;
             $category->status = $request->status ?? 0;
             $category->save();
+            $category->load('group');
+            
+            $category->load('group');
             return response()->json(['message' => 'Category created successfully',
                 'data' => $category]);
         }catch(\Exception $e){
@@ -98,16 +129,17 @@ class CategoryController extends Controller
                 'status' => 'nullable|in:0,1',
             ]);
 
-            $category =Category::find($id);
+            $category =Category::find( $id);
 
             if(!$category){
                 return response()->json(['error' => 'Category not found'], 404);
             }
 
             $category->name = $request->name;
+            $category->group_id = $request->group_id;
             $category->created_by = auth()->user()->id;
-            $category->status = $request->status ?? $category->status;
             $category->save();
+            $category->load('group');
 
             return response()->json(['message' => 'Category updated  successfully',
                 'data' => $category]);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Modules\Master;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\UserType;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -13,9 +14,16 @@ class UserTypeController extends Controller
 {
     public function getUserType(Request $request)
     {
+        
         try{
-            $userTypes = UserType::orderBy('id','desc')->paginate(10);
-            return response()->json($userTypes);
+            $query = UserType::orderBy('id','desc');
+            if ($request->status) {
+                $query->where('status', '1');
+            }
+            
+            $userTypes = $query->get();
+            $arr = ['data' =>$userTypes];
+            return response()->json($arr);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch user types'], 500);
         }
@@ -119,20 +127,29 @@ class UserTypeController extends Controller
 
     public function delete(Request $request, $id)
     {
-        try{
-            $userType =UserType::find($id);
-
-            if(!$userType){
-                return response()->json(['error' => 'User type not found'], 404);
+        try {
+            $userType = UserType::find($id);
+    
+            if (!$userType) {
+                return response()->json([
+                    'error' => 'User type not found'
+                ], 404);
             }
+    
             $userType->delete();
-
-            return response()->json(['message' => 'User type deleted  successfully']);
-        }catch(\Exception $e){
-            return response()->json(['error' => 'Failed to fetch user types', $e->getMessage()], 500);
+    
+            return response()->json([
+                'message' => 'User type deleted successfully'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to delete user type',
+                'message' => $e->getMessage()
+            ], 500);
         }
-        
     }
+
     public function statusUpdate(Request $request)
     {
         try{

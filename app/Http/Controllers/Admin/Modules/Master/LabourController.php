@@ -10,11 +10,37 @@ use Illuminate\Validation\Rule;
 
 class LabourController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+
+        $this->middleware('permission:labours.read')->only([
+            'getData','search'
+        ]);
+
+        $this->middleware('permission:labours.create')->only([
+            'store'
+        ]);
+
+        $this->middleware('permission:labours.update')->only([
+            'edit', 'update', 'statusUpdate'
+        ]);
+
+        $this->middleware('permission:labours.delete')->only([
+            'delete'
+        ]);
+    }
+    
     public function getData(Request $request)
     {
         try{
-            $labours = Labour::with('department')->orderBy('id','desc')->paginate(10);
-            return response()->json($labours);
+            $query = Labour::with('department')->orderBy('id','desc');
+            if ($request->has('status') && $request->status !== '') {
+                $query->where('status', $request->status);
+            }
+            $labours =$query->get();
+            $arr = ['data' => $labours];
+            return response()->json($arr);
         }catch(\Exception $e){
             return response()->json(['error' => 'Failed to fetch labour'], 500);
         }
@@ -24,36 +50,33 @@ class LabourController extends Controller
     public function search(Request $request)
     {
         try {
-            $query = Labour::with('department')->orderBy('id', 'desc');
-
-            if ($request->filled('department')) {
-                $query->whereHas('department', function ($q) use ($request) {
-                    $q->where('name', 'ILIKE', '%' . $request->department . '%'); 
-                });
-            }
-
-            if ($request->filled('name')) {
-                $query->where('name', 'ILIKE', '%' . $request->name . '%');
-            }
-
-            if ($request->filled('par_hour_cost')) {
-                $query->where('par_hour_cost', 'ILIKE', '%' . $request->par_hour_cost . '%');
-            }
-
-            if ($request->filled('overtime_hourly_rate')) {
-                $query->where('overtime_hourly_rate', 'ILIKE', '%' . $request->overtime_hourly_rate . '%');
-            }
-
-            if ($request->has('status') && $request->status !== null) {
-                $query->where('status', $request->status);
-            }
-
-            $labours = $query->paginate(10);
-            return response()->json($labours);
-
+            $search = $request->search;
+    
+            $labours = Labour::with('department')
+                ->when($request->active, function ($q) {
+                    $q->where('status', '1');
+                })
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($query) use ($search) {
+                        $query->where('name', 'ILIKE', "%{$search}%");
+    
+                        // Search inside department table
+                        $query->orWhereHas('department', function ($q1) use ($search) {
+                            $q1->where('name', 'ILIKE', "%{$search}%");
+                        });
+                    });
+                })
+                ->orderByDesc('id')
+                ->paginate($request->limit ?? 10);
+    
+            return response()->json([
+                'data'    => $labours,
+                'message' => 'Labours fetched successfully!'
+            ], 200);
+    
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Failed to fetch labour',
+                'error'   => 'Failed to fetch labours',
                 'message' => $e->getMessage()
             ], 500);
         }
@@ -75,8 +98,13 @@ class LabourController extends Controller
             $labour = new Labour();
 
             $labour->name = $request->name;
+            $labour->document_number = $request->document_number;
+            $labour->other_document_name = $request->other_document_name;
+            $labour->document_type = $request->document_type;
+            $labour->dob = $request->dob;
             $labour->department_id = $request->department_id;
-            $labour->par_hour_cost = round($request->par_hour_cost, 2);
+            $labour->shift_id = $request->shift_id;
+            $labour->per_hour_cost = round($request->per_hour_cost, 2);
             $labour->overtime_hourly_rate = round($request->overtime_hourly_rate,2);
             if($request->has('image')){
                 $image = $request->file('image');
@@ -86,9 +114,18 @@ class LabourController extends Controller
                 $labour->image = '/uploads/labour/'.$imageName;
 
             }
+            if($request->has('document_file')){
+                $image = $request->file('document_file');
+                $randomName = rand(10000000, 99999999);
+                $imageName = time().'_'.$randomName . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/labour/'), $imageName);
+                $labour->document_file = '/uploads/labour/'.$imageName;
+
+            }
             $labour->created_by = auth()->user()->id;
-            $labour->status = $request->status ?? 0;
+            $labour->status = $request->status ?? 1;
             $labour->save();
+            $labour->load('department');
             return response()->json(['message' => 'Labour created successfully',
                 'data' => $labour]);
         }catch(\Exception $e){
@@ -134,9 +171,14 @@ class LabourController extends Controller
             }
             $labour->name = $request->name;
             $labour->department_id = $request->department_id;
-            $labour->par_hour_cost = round($request->par_hour_cost, 2);
+            $labour->shift_id = $request->shift_id;
+            $labour->document_number = $request->document_number;
+            $labour->other_document_name = $request->other_document_name;
+            $labour->document_type = $request->document_type;
+            $labour->dob = $request->dob;
+            $labour->per_hour_cost = round($request->per_hour_cost, 2);
             $labour->overtime_hourly_rate = round($request->overtime_hourly_rate,2);
-            if($request->has('image')){
+            if($request->has('image') && $request->file('image')){
                 $image = $request->file('image');
                 $randomName = rand(10000000, 99999999);
                 $imageName = time().'_'.$randomName . '.' . $image->getClientOriginalExtension();
@@ -144,9 +186,18 @@ class LabourController extends Controller
                 $labour->image = '/uploads/labour/'.$imageName;
 
             }
+            if($request->has('document_file') && $request->file('document_file')){
+                $image = $request->file('document_file');
+                $randomName = rand(10000000, 99999999);
+                $imageName = time().'_'.$randomName . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/labour/'), $imageName);
+                $labour->document_file = '/uploads/labour/'.$imageName;
+
+            }
             $labour->created_by = auth()->user()->id;
             $labour->status = $request->status ?? $labour->status;
             $labour->save();
+            $labour->load('department');
 
             return response()->json(['message' => 'Labour updated  successfully',
                 'data' => $labour]);

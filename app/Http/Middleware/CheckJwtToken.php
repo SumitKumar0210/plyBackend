@@ -14,14 +14,26 @@ class CheckJwtToken
     public function handle(Request $request, Closure $next)
     {
         try {
-            // Parse & authenticate user from JWT
-            $user = JWTAuth::parseToken()->authenticate();
+           
+            $token = JWTAuth::getToken();
 
-            if (! $user) {
+            if (!$token) {
+                return response()->json(['error' => 'Token not provided'], 401);
+            }
+            $tokenString = $token->get();
+
+            $user = JWTAuth::authenticate($token);
+
+            if (!$user) {
                 return response()->json(['error' => 'User not found'], 401);
             }
 
-            // Extra check → token expiry from DB
+            if ($user->access_token !== $tokenString) {
+                return response()->json([
+                    'error' => 'Token invalid or replaced by a new login session.'
+                ], 401);
+            }
+
             if ($user->token_expires_at && now()->greaterThan($user->token_expires_at)) {
                 return response()->json(['error' => 'Token expired'], 401);
             }

@@ -88,7 +88,7 @@ class ProductUnitMaterialController extends Controller
             $unitMaterial->rate = round($request->rate, 2);
             $unitMaterial->total_amount = round($request->total_amount, 2);
             $unitMaterial->total_amount = round($request->total_amount, 2);
-            $unitMaterial->status = $request->status ?? 0;
+            $unitMaterial->status = $request->status ?? 1;
             $unitMaterial->save();
             return response()->json(['message' => 'Product unit material created successfully',
                 'data' => $unitMaterial]);

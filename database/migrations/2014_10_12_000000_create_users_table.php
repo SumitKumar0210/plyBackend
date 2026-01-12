@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('reset_link_expires_at',20)->nullable();
             $table->integer('created_by')->nullable();
             $table->tinyInteger('status')->default(1);
+            $table->softDeletes(); 
 
             $table->timestamps();
 

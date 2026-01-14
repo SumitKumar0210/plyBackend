@@ -96,17 +96,35 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         try{
-            $request->validate([
-                'email' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('customers', 'email')->whereNull('deleted_at'),
+           $request->validate(
+                [
+                    'email' => [
+                        'required',
+                        'string',
+                        'max:255',
+                        Rule::unique('customers', 'email')->whereNull('deleted_at'),
+                    ],
+                    'mobile' => 'required|digits:10',
+                    'alternate_mobile' => 'nullable|digits:10',
+                    'name' => 'required|string|max:255',
                 ],
-                'mobile' => 'required|digits:10',
-                'alternate_mobile' => 'nullable|digits:10',
-                'name' => 'required|string|max:255',
-            ]);
+                [
+                    'email.required' => 'Email address is required.',
+                    'email.string'   => 'Email address must be a valid string.',
+                    'email.max'      => 'Email address must not exceed 255 characters.',
+                    'email.unique'   => 'This email address is already registered.',
+            
+                    'mobile.required' => 'Mobile number is required.',
+                    'mobile.digits'   => 'Mobile number must be exactly 10 digits.',
+            
+                    'alternate_mobile.digits' => 'Alternate mobile number must be exactly 10 digits.',
+            
+                    'name.required' => 'Customer name is required.',
+                    'name.string'   => 'Customer name must be a valid string.',
+                    'name.max'      => 'Customer name must not exceed 255 characters.',
+                ]
+            );
+
 
             $customers = new Customer();
             $customers->name = $request->name;

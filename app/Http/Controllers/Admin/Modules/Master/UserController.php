@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Hash;
+use Spatie\Permission\Models\Role;
+
 
 class UserController extends Controller
 {
@@ -130,9 +132,9 @@ class UserController extends Controller
     {
         
         try{
-            $users = User::with('userType')
-            ->whereHas('userType', function ($q) {
-                $q->where('name', 'Supervisor');
+            $users = User::with('roles')
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'supervisor');
             })
             ->orderBy('id', 'desc')
             ->get();
@@ -148,14 +150,23 @@ class UserController extends Controller
     {
         try{
             
-            $request->validate([
+           $request->validate(
+            [
                 'email' => [
                     'required',
                     'string',
                     'max:255',
                     Rule::unique('users', 'email')->whereNull('deleted_at'),
                 ],
-            ]);
+            ],
+            [
+                'email.required' => 'Email address is required.',
+                'email.string'   => 'Email address must be a valid string.',
+                'email.max'      => 'Email address must not exceed 255 characters.',
+                'email.unique'   => 'This email address is already in use.',
+            ]
+        );
+
 
 
             $user = new User();
@@ -180,6 +191,8 @@ class UserController extends Controller
             $user->status = $request->status ?? 1;
             $user->save();
             $user->syncRoles([$request->user_type_id]); 
+            // $role = Role::findById($request->user_type_id, 'api');
+            // $user->syncRoles([$role->name]);
 
             // reload relationship
             $user->load('roles');
@@ -245,7 +258,9 @@ class UserController extends Controller
             $user->status = $request->status ?? $user->status;
             $user->save();
             
-            $user->syncRoles([$request->user_type_id]); 
+            // $user->syncRoles([$request->user_type_id]);
+            $role = Role::findById($request->user_type_id, 'api');
+            $user->syncRoles([$role->name]);
 
             // reload relationship
             $user->load('roles');
